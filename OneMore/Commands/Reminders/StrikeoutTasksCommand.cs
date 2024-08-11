@@ -11,6 +11,7 @@ namespace River.OneMoreAddIn.Commands
 	using System.Xml.Linq;
 	using River.OneMoreAddIn.Settings;
 	using System.Drawing;
+	using River.OneMoreAddIn.UI;
 
 	/// <summary>
 	/// Toggles strikethrough text next to all completed/incompleted tags
@@ -21,6 +22,7 @@ namespace River.OneMoreAddIn.Commands
 		{
 		}
 
+		private static string defaultTextColor => ThemeManager.Instance.GetColor("ControlText").ToRGBHtml();
 
 		public override async Task Execute(params object[] args)
 		{
@@ -95,14 +97,14 @@ namespace River.OneMoreAddIn.Commands
 
 		private static bool RestyleText(XCData cdata, bool completed)
 		{
-			var modified = false;
+			Style style = null;
 			var wrapper = cdata.GetWrapper();
 			var span = wrapper.Elements("span").FirstOrDefault(e => e.Attribute("style") != null);
 
 			var provider = new SettingsProvider();
 			var settings = provider.GetCollection(nameof(RemindersSheet));
 			var coloredStrikeoutTasks = settings.Get("coloredStrikeoutTasks", false);
-			string strikeoutTasksColor = settings.Get("strikeoutTasksColor", string.Empty);
+			var strikeoutTasksColor = settings.Get("strikeoutTasksColor", string.Empty);
 			string currentStrikeoutTasksColor = null;
 
 			if (coloredStrikeoutTasks)
@@ -128,97 +130,61 @@ namespace River.OneMoreAddIn.Commands
 			{
 				if (span == null)
 				{
-					string styleContent = "text-decoration:line-through";
+					style = new Style()
+					{
+						IsStrikethrough = true
+					};
 					if (coloredStrikeoutTasks)
 					{
-						styleContent += $";color:{strikeoutTasksColor}";
+						style.Color = strikeoutTasksColor;
 					}
-
-					wrapper.FirstNode.ReplaceWith(
-						new XElement("span",
-							new XAttribute("style", styleContent),
-							cdata.Value
-						));
-
-					modified = true;
 				}
 				else
 				{
-					var style = new Style(span.Attribute("style").Value);
+					style = new Style(span.Attribute("style").Value);
 					if (!style.IsStrikethrough)
 					{
 						style.IsStrikethrough = true;
-						modified = true;
 					}
-					var css = style.ToCss(false);
 					if (coloredStrikeoutTasks && (currentStrikeoutTasksColor == null || currentStrikeoutTasksColor != strikeoutTasksColor))
 					{
-						css += $";color:{strikeoutTasksColor}";
-						modified = true;
-					}
-					if (modified)
-					{
-						if (string.IsNullOrEmpty(css))
-						{
-							wrapper.Value = span.Value;
-						}
-						else
-						{
-							span.SetAttributeValue("style", css);
-						}
+						style.Color = strikeoutTasksColor;
 					}
 				}
 			}
 			else
 			{
-				if (span != null)
+				if (span == null)
 				{
-					var style = new Style(span.Attribute("style").Value);
-					if (style.IsStrikethrough)
-					{
-						style.IsStrikethrough = false;
-						modified = true;
-					}
-					var css = style.ToCss(false);
 					if (coloredStrikeoutTasks && currentStrikeoutTasksColor != null && currentStrikeoutTasksColor == strikeoutTasksColor)
 					{
-						if (css.Trim().Length > 0)
+						style = new Style()
 						{
-							css += ';';
-						}
-						css += "color:#000000";
-						modified = true;
-					}
-					if (modified)
-					{
-						if (string.IsNullOrEmpty(css))
-						{
-							wrapper.Value = span.Value;
-						}
-						else
-						{
-							span.SetAttributeValue("style", css);
-						}
+							Color = defaultTextColor
+						};
 					}
 				}
 				else
 				{
+					style = new Style(span.Attribute("style").Value);
+					if (style.IsStrikethrough)
+					{
+						style.IsStrikethrough = false;
+					}
 					if (coloredStrikeoutTasks && currentStrikeoutTasksColor != null && currentStrikeoutTasksColor == strikeoutTasksColor)
 					{
-						wrapper.FirstNode.ReplaceWith(
-							new XElement("span",
-								new XAttribute("style", "color:#000000"),
-								cdata.Value
-						));
-
-						modified = true;
+						style.Color = defaultTextColor;
 					}
 				}
 			}
 
-			cdata.Value = wrapper.GetInnerXml().Replace("&amp;", "&");
+			if (style != null)
+			{
+				new Stylizer(style).ApplyStyle(cdata);
+				return true;
+			}
 
-			return modified;
+			return false;
 		}
 	}
 }

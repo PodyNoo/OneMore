@@ -8,12 +8,13 @@ namespace River.OneMoreAddIn.Settings
 	using System.Drawing;
 	using System.Windows.Forms;
 	using Resx = River.OneMoreAddIn.Properties.Resources;
+	using River.OneMoreAddIn.UI;
 
 
 	internal partial class RemindersSheet : SheetBase
 	{
 
-		private readonly Color defaultColor = Color.DarkGray;
+		private Color defaultStrikeoutTasksColor => ThemeManager.Instance.GetColor("GrayText");
 
 		public RemindersSheet(SettingsProvider provider) : base(provider)
 		{
@@ -41,7 +42,7 @@ namespace River.OneMoreAddIn.Settings
 			colorCheckBox.Checked = settings.Get("coloredStrikeoutTasks", false);
 			if (colorCheckBox.Checked)
 			{
-				var color = settings.Get("strikeoutTasksColor", defaultColor.ToRGBHtml());
+				var color = settings.Get("strikeoutTasksColor", defaultStrikeoutTasksColor.ToRGBHtml());
 				colorBox.BackColor = ColorTranslator.FromHtml(color);
 			}
 			else
@@ -50,11 +51,11 @@ namespace River.OneMoreAddIn.Settings
 			}
 		}
 
-		private void ChangeLineColor(object sender, System.EventArgs e)
+		private void ChangeLineColor(object sender, EventArgs e)
 		{
 			var location = PointToScreen(colorBox.Location);
 
-			using var dialog = new UI.MoreColorDialog(Resx.PageColorDialog_Text,
+			using var dialog = new MoreColorDialog(Resx.PageColorDialog_Text,
 				location.X + colorBox.Bounds.Location.X + (colorBox.Width / 2),
 				location.Y - 50);
 
@@ -90,7 +91,7 @@ namespace River.OneMoreAddIn.Settings
 			{
 				clickLabel.Visible = true;
 				colorBox.Enabled = true;
-				colorBox.BackColor = defaultColor;
+				colorBox.BackColor = defaultStrikeoutTasksColor;
 			}
 			else
 			{
