@@ -296,6 +296,7 @@ namespace River.OneMoreAddIn.Styles
 			IsItalic = other.IsItalic;
 			IsUnderline = other.IsUnderline;
 			IsSubscript = other.IsSubscript;
+			IsStrikethrough = other.IsStrikethrough;
 			IsSuperscript = other.IsSuperscript;
 			SpaceAfter = other.SpaceAfter;
 			SpaceBefore = other.SpaceBefore;
