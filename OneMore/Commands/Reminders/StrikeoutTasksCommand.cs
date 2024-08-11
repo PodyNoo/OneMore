@@ -9,7 +9,8 @@ namespace River.OneMoreAddIn.Commands
 	using System.Linq;
 	using System.Threading.Tasks;
 	using System.Xml.Linq;
-
+	using River.OneMoreAddIn.Settings;
+	using System.Drawing;
 
 	/// <summary>
 	/// Toggles strikethrough text next to all completed/incompleted tags
@@ -98,13 +99,44 @@ namespace River.OneMoreAddIn.Commands
 			var wrapper = cdata.GetWrapper();
 			var span = wrapper.Elements("span").FirstOrDefault(e => e.Attribute("style") != null);
 
+			var provider = new SettingsProvider();
+			var settings = provider.GetCollection(nameof(RemindersSheet));
+			var coloredStrikeoutTasks = settings.Get("coloredStrikeoutTasks", false);
+			string strikeoutTasksColor = settings.Get("strikeoutTasksColor", string.Empty);
+			string currentStrikeoutTasksColor = null;
+
+			if (coloredStrikeoutTasks)
+			{
+				var oeStyleAttribute = cdata.Parent.Parent.Attribute("style");
+				if (oeStyleAttribute != null)
+				{
+					// To find last color attribute (can be multiples)
+					var parts = oeStyleAttribute.Value.Split(
+						new char[] { ';' }, System.StringSplitOptions.RemoveEmptyEntries)
+						.ToList();
+					var lastColor = parts.FindLast(p => p.Trim().StartsWith("color:"));
+
+					if (lastColor != null)
+					{
+						var color = lastColor.Replace("color:", string.Empty).Trim();
+						currentStrikeoutTasksColor = ColorTranslator.FromHtml(color).ToRGBHtml();
+					}
+				}
+			}
+
 			if (completed)
 			{
 				if (span == null)
 				{
+					string styleContent = "text-decoration:line-through";
+					if (coloredStrikeoutTasks)
+					{
+						styleContent += $";color:{strikeoutTasksColor}";
+					}
+
 					wrapper.FirstNode.ReplaceWith(
 						new XElement("span",
-							new XAttribute("style", "text-decoration:line-through"),
+							new XAttribute("style", styleContent),
 							cdata.Value
 						));
 
@@ -116,16 +148,24 @@ namespace River.OneMoreAddIn.Commands
 					if (!style.IsStrikethrough)
 					{
 						style.IsStrikethrough = true;
-						var css = style.ToCss(false);
+						modified = true;
+					}
+					var css = style.ToCss(false);
+					if (coloredStrikeoutTasks && (currentStrikeoutTasksColor == null || currentStrikeoutTasksColor != strikeoutTasksColor))
+					{
+						css += $";color:{strikeoutTasksColor}";
+						modified = true;
+					}
+					if (modified)
+					{
 						if (string.IsNullOrEmpty(css))
 						{
 							wrapper.Value = span.Value;
 						}
 						else
 						{
-							span.SetAttributeValue("style", style.ToCss(false));
+							span.SetAttributeValue("style", css);
 						}
-						modified = true;
 					}
 				}
 			}
@@ -137,15 +177,40 @@ namespace River.OneMoreAddIn.Commands
 					if (style.IsStrikethrough)
 					{
 						style.IsStrikethrough = false;
-						var css = style.ToCss(false);
+						modified = true;
+					}
+					var css = style.ToCss(false);
+					if (coloredStrikeoutTasks && currentStrikeoutTasksColor != null && currentStrikeoutTasksColor == strikeoutTasksColor)
+					{
+						if (css.Trim().Length > 0)
+						{
+							css += ';';
+						}
+						css += "color:#000000";
+						modified = true;
+					}
+					if (modified)
+					{
 						if (string.IsNullOrEmpty(css))
 						{
 							wrapper.Value = span.Value;
 						}
 						else
 						{
-							span.SetAttributeValue("style", style.ToCss(false));
+							span.SetAttributeValue("style", css);
 						}
+					}
+				}
+				else
+				{
+					if (coloredStrikeoutTasks && currentStrikeoutTasksColor != null && currentStrikeoutTasksColor == strikeoutTasksColor)
+					{
+						wrapper.FirstNode.ReplaceWith(
+							new XElement("span",
+								new XAttribute("style", "color:#000000"),
+								cdata.Value
+						));
+
 						modified = true;
 					}
 				}

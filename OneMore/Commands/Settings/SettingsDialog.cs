@@ -31,6 +31,7 @@ namespace River.OneMoreAddIn.Settings
 			Lines,
 			Plugins,
 			QuickNotes,
+			Reminders,
 			Ribbon,
 			Search,
 			Snippets
@@ -70,6 +71,7 @@ namespace River.OneMoreAddIn.Settings
 				navTree.Nodes["navigatorNode"].Text = Resx.word_Navigator;
 				navTree.Nodes["pluginsNode"].Text = Resx.word_Plugins;
 				navTree.Nodes["quickNotesNode"].Text = Resx.QuickNotesSheet_Title;
+				navTree.Nodes["remindersNode"].Text = Resx.ribRemindersMenu_Label;
 				navTree.Nodes["ribbonNode"].Text = Resx.RibbonBarSheet_Title;
 				navTree.Nodes["searchNode"].Text = Resx.SearchEngineDialog_Text;
 				navTree.Nodes["snippetsNode"].Text = Resx.word_Snippets;
@@ -134,8 +136,9 @@ namespace River.OneMoreAddIn.Settings
 					11 => new NavigatorSheet(provider),
 					12 => await PluginsSheet.Create(provider, ribbon),
 					13 => new QuickNotesSheet(provider),
-					14 => new RibbonBarSheet(provider),
-					15 => new SearchEngineSheet(provider),
+					14 => new RemindersSheet(provider),
+					15 => new RibbonBarSheet(provider),
+					16 => new SearchEngineSheet(provider),
 					_ => new SnippetsSheet(provider, ribbon),
 				};
 

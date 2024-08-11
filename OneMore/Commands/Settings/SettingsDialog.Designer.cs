@@ -42,9 +42,10 @@
 			System.Windows.Forms.TreeNode treeNode12 = new System.Windows.Forms.TreeNode("Navigator");
 			System.Windows.Forms.TreeNode treeNode13 = new System.Windows.Forms.TreeNode("Plugins");
 			System.Windows.Forms.TreeNode treeNode14 = new System.Windows.Forms.TreeNode("Quick Notes");
-			System.Windows.Forms.TreeNode treeNode15 = new System.Windows.Forms.TreeNode("Ribbon Bar");
-			System.Windows.Forms.TreeNode treeNode16 = new System.Windows.Forms.TreeNode("Search Engines");
-			System.Windows.Forms.TreeNode treeNode17 = new System.Windows.Forms.TreeNode("Snippets");
+			System.Windows.Forms.TreeNode treeNode15 = new System.Windows.Forms.TreeNode("Reminders");
+			System.Windows.Forms.TreeNode treeNode16 = new System.Windows.Forms.TreeNode("Ribbon Bar");
+			System.Windows.Forms.TreeNode treeNode17 = new System.Windows.Forms.TreeNode("Search Engines");
+			System.Windows.Forms.TreeNode treeNode18 = new System.Windows.Forms.TreeNode("Snippets");
 			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SettingsDialog));
 			this.buttonPanel = new System.Windows.Forms.Panel();
 			this.okButton = new River.OneMoreAddIn.UI.MoreButton();
@@ -178,12 +179,14 @@
 			treeNode13.Text = "Plugins";
 			treeNode14.Name = "quickNotesNode";
 			treeNode14.Text = "Quick Notes";
-			treeNode15.Name = "ribbonNode";
-			treeNode15.Text = "Ribbon Bar";
-			treeNode16.Name = "searchNode";
-			treeNode16.Text = "Search Engines";
-			treeNode17.Name = "snippetsNode";
-			treeNode17.Text = "Snippets";
+			treeNode15.Name = "remindersNode";
+			treeNode15.Text = "Reminders";
+			treeNode16.Name = "ribbonNode";
+			treeNode16.Text = "Ribbon Bar";
+			treeNode17.Name = "searchNode";
+			treeNode17.Text = "Search Engines";
+			treeNode18.Name = "snippetsNode";
+			treeNode18.Text = "Snippets";
 			this.navTree.Nodes.AddRange(new System.Windows.Forms.TreeNode[] {
             treeNode1,
             treeNode2,
@@ -201,7 +204,8 @@
             treeNode14,
             treeNode15,
             treeNode16,
-            treeNode17});
+            treeNode17,
+            treeNode18});
 			this.navTree.Size = new System.Drawing.Size(300, 657);
 			this.navTree.TabIndex = 2;
 			this.navTree.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.Navigate);
