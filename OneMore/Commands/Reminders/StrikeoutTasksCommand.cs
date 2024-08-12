@@ -18,11 +18,13 @@ namespace River.OneMoreAddIn.Commands
 	/// </summary>
 	internal class StrikeoutTasksCommand : Command
 	{
+
+		private static string DefaultTextColor => ThemeManager.Instance.GetColor("ControlText").ToRGBHtml(); // FIX: not working in dark mode, while hard-coded #000000 seems to work
+		private StyleAnalyzer styleAnalyzer;
+
 		public StrikeoutTasksCommand()
 		{
 		}
-
-		private static string defaultTextColor => ThemeManager.Instance.GetColor("ControlText").ToRGBHtml();
 
 		public override async Task Execute(params object[] args)
 		{
@@ -38,6 +40,8 @@ namespace River.OneMoreAddIn.Commands
 			};
 
 			await using var one = new OneNote(out var page, out var ns);
+			styleAnalyzer = new StyleAnalyzer(page.Root);
+
 			var indexes =
 				page.Root.Elements(ns + "TagDef")
 				.Where(e => symbols.Contains(int.Parse(e.Attribute("symbol").Value)))
@@ -77,16 +81,6 @@ namespace River.OneMoreAddIn.Commands
 						modified |= RestyleText(cdata, completed);
 					}
 				}
-
-				//var disabled = element.Attribute("disabled");
-				//if (completed && (disabled == null || disabled.Value != "true"))
-				//{
-				//	element.SetAttributeValue("disabled", "true");
-				//}
-				//else if (!completed && (disabled != null || disabled.Value == "true"))
-				//{
-				//	disabled.Remove();
-				//}
 			}
 
 			if (modified)
@@ -95,92 +89,54 @@ namespace River.OneMoreAddIn.Commands
 			}
 		}
 
-		private static bool RestyleText(XCData cdata, bool completed)
+		private bool RestyleText(XCData cdata, bool completed)
 		{
-			Style style = null;
-			var wrapper = cdata.GetWrapper();
-			var span = wrapper.Elements("span").FirstOrDefault(e => e.Attribute("style") != null);
+			var currentStyle = new Style(styleAnalyzer.CollectFrom(cdata.Parent, true));
+			Style newStyle = null;
 
-			var provider = new SettingsProvider();
-			var settings = provider.GetCollection(nameof(RemindersSheet));
-			var coloredStrikeoutTasks = settings.Get("coloredStrikeoutTasks", false);
-			var strikeoutTasksColor = settings.Get("strikeoutTasksColor", string.Empty);
-			string currentStrikeoutTasksColor = null;
+			var coloredStrikeoutTasks = RemindersSheet.ColoredStrikeoutTasksActive;
+			var strikeoutTasksColor = RemindersSheet.StrikeoutTasksColor;
+			string currentTextColor = null;
 
-			if (coloredStrikeoutTasks)
+			if (coloredStrikeoutTasks &&
+				!string.IsNullOrWhiteSpace(currentStyle.Color) &&
+				!currentStyle.Color.Equals(Style.Automatic))
 			{
-				var oeStyleAttribute = cdata.Parent.Parent.Attribute("style");
-				if (oeStyleAttribute != null)
-				{
-					// To find last color attribute (can be multiples)
-					var parts = oeStyleAttribute.Value.Split(
-						new char[] { ';' }, System.StringSplitOptions.RemoveEmptyEntries)
-						.ToList();
-					var lastColor = parts.FindLast(p => p.Trim().StartsWith("color:"));
-
-					if (lastColor != null)
-					{
-						var color = lastColor.Replace("color:", string.Empty).Trim();
-						currentStrikeoutTasksColor = ColorTranslator.FromHtml(color).ToRGBHtml();
-					}
-				}
+				currentTextColor = ColorTranslator.FromHtml(currentStyle.Color).ToRGBHtml();
 			}
 
 			if (completed)
 			{
-				if (span == null)
+				if (!currentStyle.IsStrikethrough)
 				{
-					style = new Style()
-					{
-						IsStrikethrough = true
-					};
-					if (coloredStrikeoutTasks)
-					{
-						style.Color = strikeoutTasksColor;
-					}
+					newStyle ??= new Style(currentStyle);
+					newStyle.IsStrikethrough = true;
 				}
-				else
+				if (coloredStrikeoutTasks && (currentTextColor == null || currentTextColor != strikeoutTasksColor))
 				{
-					style = new Style(span.Attribute("style").Value);
-					if (!style.IsStrikethrough)
-					{
-						style.IsStrikethrough = true;
-					}
-					if (coloredStrikeoutTasks && (currentStrikeoutTasksColor == null || currentStrikeoutTasksColor != strikeoutTasksColor))
-					{
-						style.Color = strikeoutTasksColor;
-					}
+					newStyle ??= new Style(currentStyle);
+					newStyle.Color = strikeoutTasksColor;
+					newStyle.ApplyColors = true;
 				}
 			}
 			else
 			{
-				if (span == null)
+				if (currentStyle.IsStrikethrough)
 				{
-					if (coloredStrikeoutTasks && currentStrikeoutTasksColor != null && currentStrikeoutTasksColor == strikeoutTasksColor)
-					{
-						style = new Style()
-						{
-							Color = defaultTextColor
-						};
-					}
+					newStyle ??= new Style(currentStyle);
+					newStyle.IsStrikethrough = false;
 				}
-				else
+				if (coloredStrikeoutTasks && currentTextColor != null && currentTextColor == strikeoutTasksColor)
 				{
-					style = new Style(span.Attribute("style").Value);
-					if (style.IsStrikethrough)
-					{
-						style.IsStrikethrough = false;
-					}
-					if (coloredStrikeoutTasks && currentStrikeoutTasksColor != null && currentStrikeoutTasksColor == strikeoutTasksColor)
-					{
-						style.Color = defaultTextColor;
-					}
+					newStyle ??= new Style(currentStyle);
+					newStyle.Color = DefaultTextColor;
+					newStyle.ApplyColors = true;
 				}
 			}
 
-			if (style != null)
+			if (newStyle is not null)
 			{
-				new Stylizer(style).ApplyStyle(cdata);
+				new Stylizer(newStyle).ApplyStyle(cdata);
 				return true;
 			}
 

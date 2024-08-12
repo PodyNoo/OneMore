@@ -10,17 +10,17 @@ namespace River.OneMoreAddIn.Settings
 	using Resx = River.OneMoreAddIn.Properties.Resources;
 	using River.OneMoreAddIn.UI;
 
-
 	internal partial class RemindersSheet : SheetBase
 	{
-
-		private Color defaultStrikeoutTasksColor => ThemeManager.Instance.GetColor("GrayText");
-
+		private static Color DefaultStrikeoutTasksColor => ThemeManager.Instance.GetColor("GrayText");
+		public static bool ColoredStrikeoutTasksActive => GetSettingsColletion().Get("coloredStrikeoutTasks", false);
+		public static string StrikeoutTasksColor => GetSettingsColletion().Get("strikeoutTasksColor", DefaultStrikeoutTasksColor.ToRGBHtml());
+		
 		public RemindersSheet(SettingsProvider provider) : base(provider)
 		{
 			InitializeComponent();
 
-			Name = "RemindersSheet";
+			Name = nameof(RemindersSheet);
 			Title = Resx.ribRemindersMenu_Label;
 
 			if (NeedsLocalizing())
@@ -38,11 +38,10 @@ namespace River.OneMoreAddIn.Settings
 		protected override void OnLoad(EventArgs e)
 		{
 			base.OnLoad(e);
-			var settings = provider.GetCollection(Name);
-			colorCheckBox.Checked = settings.Get("coloredStrikeoutTasks", false);
+			colorCheckBox.Checked = ColoredStrikeoutTasksActive;
 			if (colorCheckBox.Checked)
 			{
-				var color = settings.Get("strikeoutTasksColor", defaultStrikeoutTasksColor.ToRGBHtml());
+				var color = StrikeoutTasksColor;
 				colorBox.BackColor = ColorTranslator.FromHtml(color);
 			}
 			else
@@ -66,6 +65,12 @@ namespace River.OneMoreAddIn.Settings
 			}
 		}
 
+		private static SettingsCollection GetSettingsColletion(SettingsProvider settingsProvider = null)
+		{
+			var provider = settingsProvider ?? new SettingsProvider();
+			return provider.GetCollection(nameof(RemindersSheet));
+		}
+
 		public override bool CollectSettings()
 		{
 			var settings = provider.GetCollection(Name);
@@ -85,13 +90,13 @@ namespace River.OneMoreAddIn.Settings
 			return false;
 		}
 
-		private void colorCheckBox_CheckedChanged(object sender, EventArgs e)
+		private void CheckedChanged(object sender, EventArgs e)
 		{
 			if (colorCheckBox.Checked)
 			{
 				clickLabel.Visible = true;
 				colorBox.Enabled = true;
-				colorBox.BackColor = defaultStrikeoutTasksColor;
+				colorBox.BackColor = DefaultStrikeoutTasksColor;
 			}
 			else
 			{

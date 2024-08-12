@@ -81,7 +81,7 @@ namespace River.OneMoreAddIn.Settings
 			this.colorCheckBox.ThemedBack = null;
 			this.colorCheckBox.ThemedFore = null;
 			this.colorCheckBox.UseVisualStyleBackColor = false;
-			this.colorCheckBox.CheckedChanged += new System.EventHandler(this.colorCheckBox_CheckedChanged);
+			this.colorCheckBox.CheckedChanged += new System.EventHandler(this.CheckedChanged);
 			// 
 			// clickLabel
 			// 
