@@ -97,7 +97,7 @@ namespace River.OneMoreAddIn
 				var parts = css.Split(';');
 				if (parts.Length == 0) continue;
 
-				foreach (var part in parts)
+				foreach (var part in parts.Reverse())
 				{
 					var pair = part.Split(':');
 					if (pair.Length < 2) continue;
